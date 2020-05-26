@@ -14,7 +14,7 @@
 
 (defonce ^:private unrealized `Unrealized)
 
-(defrecord State [name start-fn stop-fn value]
+(defrecord ^:no-doc State [name start-fn stop-fn value]
   clojure.lang.IDeref
   (deref [this]
     (when-not (realized? this)
