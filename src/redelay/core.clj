@@ -112,7 +112,9 @@
   {:arglists '([name doc-string? attr-map? body])}
   [name & exprs]
   (let [[name exprs] (name-with-exprs name exprs)]
-    `(def ~name (state ~@exprs :name ~(symbol (str *ns*) (str name))))))
+    `(def ~name
+       (with-meta (state ~@exprs :name ~(symbol (str *ns*) (str name)))
+         ~(meta name)))))
 
 ;;; Default management.
 
