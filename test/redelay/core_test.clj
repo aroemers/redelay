@@ -36,9 +36,6 @@
     (is (false? (realized? foo)))
 
     (is (= 3 (force baz)))
-
-    (is (= [baz bar] (stop bar)))
-    (is (= [foo] (status)))
     (stop)
 
     (is (= "redelay.core-test" (namespace foo)))
@@ -48,4 +45,6 @@
     (is (= "baz" (name baz)))
 
     (is (= {:doc "My docstring", :private true, :extra :attribute}
-           (select-keys (meta #'baz) [:doc :private :extra])))))
+           (select-keys (meta #'baz) [:doc :private :extra])))
+    (is (= {:doc "My docstring", :private true, :extra :attribute}
+           (meta baz)))))

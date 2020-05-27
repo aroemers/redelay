@@ -14,7 +14,7 @@
 
 (defonce ^:private unrealized `Unrealized)
 
-(defrecord ^:no-doc State [name start-fn stop-fn value]
+(deftype State [name start-fn stop-fn value meta]
   clojure.lang.IDeref
   (deref [this]
     (when-not (realized? this)
@@ -43,6 +43,14 @@
   (getName [_]
     (clojure.core/name name))
 
+  clojure.lang.IMeta
+  (meta [_]
+    meta)
+
+  clojure.lang.IObj
+  (withMeta [this meta]
+    (State. name start-fn stop-fn value meta))
+
   Object
   (toString [this]
     (let [addr (Integer/toHexString (System/identityHashCode this))
@@ -50,11 +58,9 @@
       (str "#<State@" addr "[" name "]: " val ">"))))
 
 (defn ^:no-doc state*
-  [ns? name? start-fn stop-fn]
-  (map->State {:name     (symbol ns? (or name? (str (gensym "state--"))))
-               :start-fn start-fn
-               :stop-fn  stop-fn
-               :value    (atom unrealized)}))
+  [ns-str? name-str? start-fn stop-fn]
+  (let [name (symbol ns-str? (or name-str? (str (gensym "state--"))))]
+    (State. name start-fn stop-fn (atom unrealized) nil)))
 
 (defmethod print-method State [state ^java.io.Writer writer]
   (.write writer (str state)))
@@ -87,7 +93,8 @@
 (defmacro state
   "Create a state object, using the optional :start, :stop and :name
   expressions. The first forms are implicitly considered as the :start
-  expression, if not qualified otherwise."
+  expression, if not qualified otherwise. Returned State object
+  implements IDeref, IPending, Closeable, Named, IMeta and IObj."
   [& exprs]
   (let [{:keys [start stop] names :name implicit-start nil} (qualified-exprs [:start :stop :name] exprs)]
     (assert (not (and start implicit-start)) "start expression must be explicit or implicit")
@@ -106,9 +113,11 @@
   (instance? State obj))
 
 (defmacro defstate
-  "Create a state object, using the optional :start and :stop
+  "Create a State object, using the optional :start and :stop
   expressions, and bind it to a var with the given name in the current
-  namespace."
+  namespace. Supports metadata on the name, a docstring and an
+  attribute map. Metadata is both set to the var as well as the State
+  object."
   {:arglists '([name doc-string? attr-map? body])}
   [name & exprs]
   (let [[name exprs] (name-with-exprs name exprs)]
