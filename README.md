@@ -6,11 +6,13 @@
 
 # 🏖 redelay
 
-A Clojure library for state lifecycle-management using resettable delays, inspired by [mount-lite](https://github.com/aroemers/mount-lite).
+A Clojure library for state lifecycle-management using resettable delays, inspired by [mount-lite](https://github.com/aroemers/mount-lite), decomplected from any methodology.
 
 ![Banner](banner.png)
 
 ## Usage
+
+### The basics
 
 With this library you create **State** objects.
 Think of them as Clojure's [Delay](https://clojuredocs.org/clojure.core/delay) objects, but **resettable** and **tracked**.
@@ -92,7 +94,7 @@ Closing datasource...
 ;=>  #<State@247136[user/state--312]: :not-delivered>)
 ```
 
-### Naming
+### Naming and defstate
 
 Next to the `:start` and `:stop` expressions, you can also pass a `:name` to the `state` macro.
 This makes recognizing the State objects easier.
@@ -112,11 +114,24 @@ Because it is common to have the name to be equal to the var it is bound to, abo
 ```
 
 The `defstate` macro fully supports metadata on the name, docstrings and attribute maps.
+The metadata is both set on the var as well as on the State object.
+
+Next to metadata support, Clojure's `namespace` and `name` functions also work on State objects.
+For example, this yields a somewhat easier to read status list:
+
+```clj
+(map name (status))
+;=> ("config")
+```
 
 ### Testing
 
-Since state in redelay is handled as first class objects, you can simply use `with-redefs` to your hearts content.
-You can redefine "production" states with other states, or even with a plain `delay`.
+Since state in redelay is handled as first class objects, there are all kinds of testing strategies.
+It all depends a bit on where you keep your State objects (see next section).
+
+For the examples above you can simply use plain old `with-redefs` to your hearts content.
+We can redefine "production" states with other states, or even with a plain `delay`.
+There is no need for a special API here.
 For example:
 
 ```clj
@@ -127,20 +142,28 @@ For example:
 
 It might be a good idea to add a fixture to your tests, ensuring `(stop)` is always called before and/or after a test.
 
-### Extending
+### Global versus local state
 
-The library is very minimal on purpose.
+Although the examples above have bound the State objects to global vars, this is certainly not required.
+State objects can live anywhere and can be passed around like any other object.
+If you prefer a map of states for example, be it unrealized, realized or dereferenced, then that's perfectly fine as well.
+As such, this library supports the whole spectrum of [mount](https://github.com/aroemers/mount-lite)-like global states to [Component](https://github.com/stuartsierra/component)-like system maps to [Integrant](https://github.com/weavejester/integrant)-like data-driven approaches.
+
+By the way, if you prefer system maps, have a look at the [rmap](https://github.com/aroemers/rmap) library, as it combines well with redelay.
+
+### Extending redelay
+
+The redelay library is minimal on purpose.
 It offers a powerful first class State object and the two basic management functions `(status)` and `(stop)`.
 Those two functions are actually implemented using the library's extension point: the watchpoint.
 
 The library contains a public `watchpoint` var.
 You can watch this var by using Clojure's `add-watch`.
-The registered watch functions receive realized State objects as "new" or a stopped (closed) State object as "old".
-Using this you can do all kinds of things, such as logging or keeping track of States yourself.
-Want to have more sophisticated stop logic?
-Want to have several buckets of states?
-Go for it.
-Be creative and make the library fit your perfect workflow!
+The registered watch functions receive realized State objects as "new" or stopped (closed) State object as "old".
+
+You can do all kinds of things with this watchpoint, such as logging or keeping track of States yourself.
+You want to have more sophisticated stop logic with separate buckets/systems of states using their metadata for example?
+Go for it, be creative and use the library's building blocks to fit your perfect workflow!
 
 _That's it for simple lifecycle management around the stateful parts of your application. Have fun!_ 🚀
 
