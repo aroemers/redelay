@@ -14,9 +14,9 @@ A Clojure library for state lifecycle-management using resettable delays, inspir
 
 ### The basics
 
-With this library you create **State** objects.
+With this library you create first class **State** objects.
 Think of them as Clojure's [Delay](https://clojuredocs.org/clojure.core/delay) objects, but **resettable** and **tracked**.
-Because of the resetting feature, a State object can take _two_ expressions; a `:start` expression and a `:stop` expression.
+Because of the resetting feature, a State object can take two expressions; a `:start` expression and a `:stop` expression.
 You create State objects using the `state` macro.
 
 Let's create two State objects first:
@@ -46,10 +46,10 @@ config
 
 There are several things to note here.
 
-- The `:stop` expression is optional. Actually, all expressions to `state` are optional.
-- An expression can consist of multiple forms, wrapped in an implicit do.
-- The first forms to `state` are considered to be the `:start` expression, if not qualified otherwise.
-- The `:stop` expression has access to a `this` parameter, bound to the State value.
+- The `:stop` expression is optional. Actually, **all expressions** to `state` are **optional**.
+- An expression can consist of multiple forms, wrapped in an implicit `do`.
+- The first forms in the `state` body are considered to be the `:start` expression, if not qualified otherwise.
+- The `:stop` expression has access to **a `this` parameter**, bound to the State value.
 - You can call `realized?` on a State object, just like you can on a Delay.
 
 Now let's use our states.
@@ -69,12 +69,13 @@ Opening datasource...
 ;=> true
 ```
 
-You can see that the `:start` expressions of the states are only executed once.
+In the example you can see that the `:start` expressions of the states are only executed once.
 Subsequent derefs return the cached value.
 
 A State implements Java's `Closeable`, so you _could_ call `.close` on it.
 This will execute the `:stop` expression and clear its cache.
-**Under water however, redelay keeps track of which states are realized and thus active.**
+Now the State is ready to be realized again.
+However, **redelay keeps track of which states are realized and thus active.**
 You can see which states are active by calling `(status)`:
 
 ```clj
@@ -83,9 +84,8 @@ You can see which states are active by calling `(status)`:
 ;=>  #<State@329663[user/state--315]: org.postgresql.ds.PGSimpleDataSource@267825>)
 ```
 
-Because the active states are tracked, you can easily stop all of them by calling `(stop)`.
+Because the active states are tracked, you can easily stop _all_ them by calling `(stop)`.
 All the active states are stopped (i.e. closed), in the reverse order of their realization.
-Afterwards, they are ready again to be realized.
 
 ```clj
 (stop)
@@ -98,6 +98,7 @@ Closing datasource...
 
 Next to the `:start` and `:stop` expressions, you can also pass a `:name` to the `state` macro.
 This makes recognizing the State objects easier.
+The `:name` expression must be a symbol.
 
 ```clj
 (def config (state (load-config) :name user/config))
@@ -107,18 +108,20 @@ config
 ;=> #<State@19042[user/config]: :not-delivered>
 ```
 
-Because it is common to have the name to be equal to the var it is bound to, above can also be written as follows:
+If you bind your State objects to a global var, it is common to have the name to be equal to the var it is bound to.
+Therefore the above can also be written as follows:
 
 ```clj
 (defstate config (load-config))
 ```
 
-The `defstate` macro fully supports metadata on the name, docstrings and attribute maps.
+Users of [mount](https://github.com/tolitius/mount) or [mount-lite](https://github.com/aroemers/mount-lite) will recognize this syntax.
+The `defstate` macro fully supports metadata on the name, a docstring and an attribute map.
 Note that this metadata is set on the var.
-If you want metadata on a State, you can use add a `:meta` expression in the body of the `state` macro.
+If you want metadata on a State, you can use **a `:meta` expression** in the body of the `state` macro, or use Clojure's `with-meta` on it.
 
 Next to metadata support, Clojure's `namespace` and `name` functions also work on State objects.
-For example, this yields a somewhat easier to read status list:
+For example, this may yield an easier to read status list:
 
 ```clj
 (map name (status))
@@ -128,11 +131,11 @@ For example, this yields a somewhat easier to read status list:
 ### Testing
 
 Since state in redelay is handled as first class objects, there are all kinds of testing strategies.
-It all depends a bit on where you keep your State objects (see next section).
+It all depends a bit on where you keep your State objects (discussed in next section).
 
 For the examples above you can simply use plain old `with-redefs` to your hearts content.
 We can redefine "production" states with other states, or even with a plain `delay`.
-There is no need for a special API here.
+There is **no need for a special API** to support testing.
 For example:
 
 ```clj
@@ -141,26 +144,29 @@ For example:
     (is (instance? org.apache.derby.jdbc.ClientDataSource @db))))
 ```
 
-It might be a good idea to add a fixture to your tests, ensuring `(stop)` is always called before and/or after a test.
+By the way, in some situations it might be a good idea to add a fixture to your tests, ensuring `(stop)` is always called after a test.
 
 ### Global versus local state
 
 Although the examples above have bound the State objects to global vars, this is certainly not required.
-State objects can live anywhere and can be passed around like any other object.
+**State objects can live anywhere** and can be passed around like any other object.
 If you prefer a map of states for example, be it unrealized, realized or dereferenced, then that's perfectly fine as well.
-As such, this library supports the whole spectrum of [mount](https://github.com/aroemers/mount-lite)-like global states to [Component](https://github.com/stuartsierra/component)-like system maps to [Integrant](https://github.com/weavejester/integrant)-like data-driven approaches.
 
-By the way, if you prefer system maps, have a look at the [rmap](https://github.com/aroemers/rmap) library, as it combines well with redelay.
+Because of its first class and unassuming nature, this library supports **the whole spectrum** of [mount](https://github.com/aroemers/mount-lite)-like global states to [Component](https://github.com/stuartsierra/component)-like system maps to [Integrant](https://github.com/weavejester/integrant)-like data-driven approaches.
+This is also the reason that redelay does not have some sort of "start" or "init" function.
+You can easily add this to your application yourself, if you don't want to rely on derefs alone.
+
+By the way, if you prefer system maps, have a look at **the [rmap](https://github.com/aroemers/rmap) library**, as it combines well with redelay.
 
 ### Extending redelay
 
-The redelay library is minimal on purpose.
-It offers a powerful first class State object and the two basic management functions `(status)` and `(stop)`.
-Those two functions are actually implemented using the library's extension point: the watchpoint.
+The redelay library is **minimal on purpose**.
+It offers a complete first class State object and the two basic management functions `(status)` and `(stop)`.
+Those two functions are actually implemented using the library's extension point: **the watchpoint**.
 
 The library contains a public `watchpoint` var.
 You can watch this var by using Clojure's `add-watch`.
-The registered watch functions receive realized State objects as "new" or stopped (closed) State object as "old".
+The registered watch functions receive started (realized) State objects as "new" and stopped (closed) State object as "old".
 
 You can do all kinds of things with this watchpoint, such as logging or keeping track of States yourself.
 You want to have more sophisticated stop logic with separate buckets/systems of states using their metadata for example?
