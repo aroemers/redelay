@@ -53,7 +53,7 @@ There are several things to note here.
 - You can call `realized?` on a State object, just like you can on a Delay.
 
 Now let's use our states.
-Just like a Delay, the first time a State is consulted by a deref (or force), it is realized.
+Just like a Delay, the first time a State is consulted by a `deref` (or `force`), it is realized.
 This means that the `:start` expression is executed and its result is cached.
 
 ```clj
@@ -84,7 +84,7 @@ You can see which states are active by calling `(status)`:
 ;=>  #<State@329663[user/state--315]: org.postgresql.ds.PGSimpleDataSource@267825>)
 ```
 
-Because the active states are tracked, you can easily stop _all_ them by calling `(stop)`.
+Because the active states are tracked, you can easily stop _all_ of them by calling `(stop)`.
 All the active states are stopped (i.e. closed), in the reverse order of their realization.
 
 ```clj
@@ -93,6 +93,8 @@ Closing datasource...
 ;=> (#<State@329663[user/state--315]: :not-delivered>
 ;=>  #<State@247136[user/state--312]: :not-delivered>)
 ```
+
+So no matter where your state lives, you can reset it and start afresh.
 
 ### Naming and defstate
 
@@ -115,7 +117,7 @@ Therefore the above can also be written as follows:
 (defstate config (load-config))
 ```
 
-Users of [mount](https://github.com/tolitius/mount) or [mount-lite](https://github.com/aroemers/mount-lite) will recognize this syntax.
+Users of [mount](https://github.com/tolitius/mount) or [mount-lite](https://github.com/aroemers/mount-lite) will recognize above syntax.
 The `defstate` macro fully supports metadata on the name, a docstring and an attribute map.
 Note that this metadata is set on the var.
 If you want metadata on a State, you can use **a `:meta` expression** in the body of the `state` macro, or use Clojure's `with-meta` on it.
@@ -134,7 +136,7 @@ Since state in redelay is handled as first class objects, there are all kinds of
 It all depends a bit on where you keep your State objects (discussed in next section).
 
 For the examples above you can simply use plain old `with-redefs` to your hearts content.
-We can redefine "production" states with other states, or even with a plain `delay`.
+We can redefine "production" states to other states, or even to a plain `delay`.
 There is **no need for a special API** to support testing.
 For example:
 
@@ -150,7 +152,7 @@ By the way, in some situations it might be a good idea to add a fixture to your 
 
 Although the examples above have bound the State objects to global vars, this is certainly not required.
 **State objects can live anywhere** and can be passed around like any other object.
-If you prefer a map of states for example, be it unrealized, realized or dereferenced, then that's perfectly fine as well.
+If you prefer a map of states for example, be it unrealized, realized or dereferenced, then that's perfectly feasible as well.
 
 Because of its first class and unassuming nature, this library supports **the whole spectrum** of [mount](https://github.com/aroemers/mount-lite)-like global states to [Component](https://github.com/stuartsierra/component)-like system maps to [Integrant](https://github.com/weavejester/integrant)-like data-driven approaches.
 This is also the reason that redelay does not have some sort of "start" or "init" function.
