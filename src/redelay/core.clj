@@ -58,9 +58,10 @@
       (str "#<State@" addr "[" name "]: " val ">"))))
 
 (defn ^:no-doc state*
-  [ns-str? name-str? start-fn stop-fn]
+  [ns-str? name-str? start-fn stop-fn meta]
   (let [name (symbol ns-str? (or name-str? (str (gensym "state--"))))]
-    (State. name start-fn stop-fn (atom unrealized) nil)))
+    (with-meta (State. name start-fn stop-fn (atom unrealized) nil)
+      meta)))
 
 (defmethod print-method State [state ^java.io.Writer writer]
   (.write writer (str state)))
@@ -74,13 +75,13 @@
               (string? arg1)                   [{:doc arg1} (cons arg2 argx)]
               (map? arg1)                      [arg1 (cons arg2 argx)]
               :otherwise                       [{} args])]
-    [(with-meta name (merge (meta name) attrs)) args]))
+    [(with-meta name (merge (meta name) attrs {:defstate true})) args]))
 
 (defn- qualified-exprs [qualifiers exprs]
   (loop [qualifiers (set qualifiers)
          exprs      exprs
          qualifier  nil
-         qualified  {}]
+        qualified  {}]
     (if (seq exprs)
       (let [expr (first exprs)]
         (if-let [qualifier (qualifiers expr)]
@@ -91,21 +92,26 @@
 ;;; Public API
 
 (defmacro state
-  "Create a state object, using the optional :start, :stop and :name
-  expressions. The first forms are implicitly considered as the :start
-  expression, if not qualified otherwise. Returned State object
-  implements IDeref, IPending, Closeable, Named, IMeta and IObj."
+  "Create a state object, using the optional :start, :stop, :name
+  and :meta expressions. The first forms are implicitly considered as
+  the :start expression, if not qualified otherwise. Returned State
+  object implements IDeref, IPending, Closeable, Named, IMeta and
+  IObj."
   [& exprs]
-  (let [{:keys [start stop] names :name implicit-start nil} (qualified-exprs [:start :stop :name] exprs)]
+  (let [{:keys [start stop] names :name metas :meta implicit-start nil}
+        (qualified-exprs [:start :stop :name :meta] exprs)]
     (assert (not (and start implicit-start)) "start expression must be explicit or implicit")
-    (assert (< (count names) 2) "name expression must be a single form")
+    (assert (< (count names) 2) "name expression must be a single symbol")
+    (assert (< (count metas) 2) "meta expression must be a single map")
     (let [start (or start implicit-start)
-          name  (first names)]
+          name  (first names)
+          meta  (first metas)]
       (assert (or (nil? name) (symbol? name)) "name must be symbol")
       `(state* ~(if name (namespace name) (str *ns*))
                ~(when name (clojure.core/name name))
                (fn [] ~@start)
-               (fn [~'this] ~@stop)))))
+               (fn [~'this] ~@stop)
+               ~meta))))
 
 (defn state?
   "Returns true if obj is a State object."
@@ -113,17 +119,15 @@
   (instance? State obj))
 
 (defmacro defstate
-  "Create a State object, using the optional :start and :stop
+  "Create a State object, using the optional :start, :stop and :meta
   expressions, and bind it to a var with the given name in the current
   namespace. Supports metadata on the name, a docstring and an
-  attribute map. Metadata is both set to the var as well as the State
-  object."
+  attribute map."
   {:arglists '([name doc-string? attr-map? body])}
   [name & exprs]
   (let [[name exprs] (name-with-exprs name exprs)]
     `(def ~name
-       (with-meta (state ~@exprs :name ~(symbol (str *ns*) (str name)))
-         ~(meta name)))))
+       (state ~@exprs :name ~(symbol (str *ns*) (str name))))))
 
 ;;; Default management.
 

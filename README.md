@@ -114,7 +114,8 @@ Because it is common to have the name to be equal to the var it is bound to, abo
 ```
 
 The `defstate` macro fully supports metadata on the name, docstrings and attribute maps.
-The metadata is both set on the var as well as on the State object.
+Note that this metadata is set on the var.
+If you want metadata on a State, you can use add a `:meta` expression in the body of the `state` macro.
 
 Next to metadata support, Clojure's `namespace` and `name` functions also work on State objects.
 For example, this yields a somewhat easier to read status list:

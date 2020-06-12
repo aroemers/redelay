@@ -20,7 +20,8 @@
       "My docstring"
       {:extra :attribute}
       :start (dec @bar) (inc @bar)
-      :stop  (deliver stopped this))
+      :stop  (deliver stopped this)
+      :meta  {:dev true})
 
     (is (false? (realized? foo)))
     (is (state? foo))
@@ -46,5 +47,4 @@
 
     (is (= {:doc "My docstring", :private true, :extra :attribute}
            (select-keys (meta #'baz) [:doc :private :extra])))
-    (is (= {:doc "My docstring", :private true, :extra :attribute}
-           (meta baz)))))
+    (is (= {:dev true} (meta baz)))))
