@@ -146,7 +146,18 @@ For example:
     (is (instance? org.apache.derby.jdbc.ClientDataSource @db))))
 ```
 
-By the way, in some situations it might be a good idea to add a fixture to your tests, ensuring `(stop)` is always called after a test.
+In some situations it might be a good idea to add a fixture to your tests, ensuring `(stop)` is always called after a test.
+Another option would be to use Clojure's `with-open`, since State objects implement `Closeable`:
+
+```clj
+(deftest test-in-memory
+  (with-open [config (make-config-state :test-env)
+              db     (make-db-state @config)]
+    (is (instance? org.apache.derby.jdbc.ClientDataSource @db))))
+```
+
+Again, these are just examples.
+You may structure and use your State objects differently.
 
 ### Global versus local state
 
