@@ -54,7 +54,11 @@
   Object
   (toString [this]
     (let [addr (Integer/toHexString (System/identityHashCode this))
-          val  (if (realized? this) (str (if (some? @value) @value "nil")) :not-delivered)]
+          val  (if (realized? this)
+                 (if (some? @value)
+                   (str @value)
+                   "nil")
+                 :not-delivered)]
       (str "#<State@" addr "[" name "]: " val ">"))))
 
 (defn ^:no-doc state*
