@@ -2,7 +2,7 @@
 [![cljdoc badge](https://cljdoc.org/badge/functionalbytes/redelay)](https://cljdoc.org/d/functionalbytes/redelay/CURRENT)
 [![Clojure CI](https://github.com/aroemers/redelay/workflows/Clojure%20CI/badge.svg?branch=master)](https://github.com/aroemers/redelay/actions?query=workflow%3A%22Clojure+CI%22)
 [![Clojars Project](https://img.shields.io/clojars/dt/functionalbytes/redelay?color=blue)](https://clojars.org/functionalbytes/redelay)
-![Time](https://img.shields.io/badge/time-delayed-brightgreen)
+[![Blogpost](https://img.shields.io/badge/blog-Introducing%20redelay-brightgreen)](https://functionalbytes.nl/clojure/redelay/rmap/2020/06/26/redelay.html)
 
 # 🏖 redelay
 
