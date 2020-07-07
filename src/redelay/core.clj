@@ -61,17 +61,6 @@
                  :not-delivered)]
       (str "#<State@" addr "[" name "]: " val ">"))))
 
-(defn  state*
-  "Low-level function to create a State object. All keys are optional.
-  The `:start-fn` value must be a 0-arity function. The `:stop-fn`
-  value must be a 1-arity function. The `:meta` value must be a map."
-  [{:keys [ns-str name-str start-fn stop-fn meta]
-    :or   {start-fn (fn [])
-           stof-fn  (fn [_])}}]
-  (let [name (symbol ns-str (or name-str (str (gensym "state--"))))]
-    (with-meta (State. name start-fn stop-fn (atom unrealized) nil)
-      meta)))
-
 (defmethod print-method State [state ^java.io.Writer writer]
   (.write writer (str state)))
 
@@ -99,6 +88,17 @@
       qualified)))
 
 ;;; Public API
+
+(defn  state*
+  "Low-level function to create a State object. All keys are optional.
+  The `:start-fn` value must be a 0-arity function. The `:stop-fn`
+  value must be a 1-arity function. The `:meta` value must be a map."
+  [{:keys [ns-str name-str start-fn stop-fn meta]
+    :or   {start-fn (fn [])
+           stop-fn  (fn [_])}}]
+  (let [name (symbol ns-str (or name-str (str (gensym "state--"))))]
+    (with-meta (State. name start-fn stop-fn (atom unrealized) nil)
+      meta)))
 
 (defmacro state
   "Create a state object, using the optional :start, :stop, :name

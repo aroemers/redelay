@@ -48,3 +48,8 @@
     (is (= {:doc "My docstring", :private true, :extra :attribute}
            (select-keys (meta #'baz) [:doc :private :extra])))
     (is (= {:dev true} (meta baz)))))
+
+(deftest low-level-test
+  (let [just-start (state* {:start-fn (fn [] true)})]
+    (is @just-start)
+    (stop)))
