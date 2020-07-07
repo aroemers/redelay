@@ -61,9 +61,14 @@
                  :not-delivered)]
       (str "#<State@" addr "[" name "]: " val ">"))))
 
-(defn ^:no-doc state*
-  [ns-str? name-str? start-fn stop-fn meta]
-  (let [name (symbol ns-str? (or name-str? (str (gensym "state--"))))]
+(defn  state*
+  "Low-level function to create a State object. All keys are optional.
+  The `:start-fn` value must be a 0-arity function. The `:stop-fn`
+  value must be a 1-arity function. The `:meta` value must be a map."
+  [{:keys [ns-str name-str start-fn stop-fn meta]
+    :or   {start-fn (fn [])
+           stof-fn  (fn [_])}}]
+  (let [name (symbol ns-str (or name-str (str (gensym "state--"))))]
     (with-meta (State. name start-fn stop-fn (atom unrealized) nil)
       meta)))
 
@@ -111,11 +116,11 @@
           name  (first names)
           meta  (first metas)]
       (assert (or (nil? name) (symbol? name)) "name must be symbol")
-      `(state* ~(if name (namespace name) (str *ns*))
-               ~(when name (clojure.core/name name))
-               (fn [] ~@start)
-               (fn [~'this] ~@stop)
-               ~meta))))
+      `(state* {:ns-str   ~(if name (namespace name) (str *ns*))
+                :name-str ~(when name (clojure.core/name name))
+                :start-fn (fn [] ~@start)
+                :stop-fn  (fn [~'this] ~@stop)
+                :meta     ~meta}))))
 
 (defn state?
   "Returns true if obj is a State object."
