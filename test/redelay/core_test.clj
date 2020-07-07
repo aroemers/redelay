@@ -1,5 +1,5 @@
 (ns redelay.core-test
-  (:require [redelay.core :refer [state status stop state? defstate]]
+  (:require [redelay.core :refer [state status stop state? defstate state*]]
             [clojure.test :as test :refer [deftest is]]))
 
 (defn ensure-stop [f]
