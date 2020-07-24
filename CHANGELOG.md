@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.0.3
+
+### Added
+
+- Trying to redefine an active (i.e. realized) `defstate` is skipped and yields a warning.
+
+
 ## 1.0.2
 
 ### Fixed

@@ -118,6 +118,8 @@ Therefore the above can also be written as follows:
 ```
 
 Users of [mount](https://github.com/tolitius/mount) or [mount-lite](https://github.com/aroemers/mount-lite) will recognize above syntax.
+Trying to redefine a `defstate` which is active (i.e. realized) is skipped.
+
 The `defstate` macro fully supports metadata on the name, a docstring and an attribute map.
 Note that this metadata is set on the var.
 If you want metadata on a State, you can use **a `:meta` expression** in the body of the `state` macro, or use Clojure's `with-meta` on it.

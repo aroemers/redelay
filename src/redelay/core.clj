@@ -87,9 +87,15 @@
           (recur qualifiers (rest exprs) qualifier (update qualified qualifier (fnil conj []) expr))))
       qualified)))
 
+(declare state?)
+
+(defn- skip-defstate? [ns name]
+  (let [state (some-> (ns-resolve ns name) deref)]
+    (and (state? state) (realized? state))))
+
 ;;; Public API
 
-(defn  state*
+(defn state*
   "Low-level function to create a State object. All keys are optional.
   The `:start-fn` value must be a 0-arity function. The `:stop-fn`
   value must be a 1-arity function. The `:meta` value must be a map."
@@ -131,12 +137,16 @@
   "Create a State object, using the optional :start, :stop and :meta
   expressions, and bind it to a var with the given name in the current
   namespace. Supports metadata on the name, a docstring and an
-  attribute map."
+  attribute map. Trying to redefine an active (i.e. realized) defstate
+  is skipped."
   {:arglists '([name doc-string? attr-map? body])}
   [name & exprs]
-  (let [[name exprs] (name-with-exprs name exprs)]
-    `(def ~name
-       (state ~@exprs :name ~(symbol (str *ns*) (str name))))))
+  (if (skip-defstate? *ns* name)
+    (binding [*out* *err*]
+      (println "WARNING: skipping redefinition of active defstate" name))
+    (let [[name exprs] (name-with-exprs name exprs)]
+      `(def ~name
+         (state ~@exprs :name ~(symbol (str *ns*) (str name)))))))
 
 ;;; Default management.
 
