@@ -16,27 +16,34 @@ A Clojure library for state lifecycle-management using resettable delays, inspir
 
 With this library you create first class **State** objects.
 Think of them as Clojure's [Delay](https://clojuredocs.org/clojure.core/delay) objects, but **resettable** and **tracked**.
-Because of the resetting feature, a State object can take two expressions; a `:start` expression and a `:stop` expression.
-You create State objects using the `state` macro.
 
-Let's create two State objects first:
+Let's create two State objects for our examples.
+First we need to require the small API of redelay:
 
 ```clj
 (require '[redelay.core :refer [state status stop]])
+```
 
-(def config (state (println "Loading config...")
-                   (edn/read-string (slurp "config.edn")))
-;=> #'user/config
+Next we use the `state` macro to create two State objects.
 
-(def db (state :start  ; <-- optional in this position
-               (println "Opening datasource...")
-               (hikari/make-datasource (:jdbc @config))
+```clj
+(def config 
+  (state (println "Loading config...")
+         (edn/read-string (slurp "config.edn")))
 
-               :stop
-               (println "Closing datasource...")
-               (hikari/close-datasource this)))
-;=> #'user/db
+(def db 
+  (state :start  ; <-- optional in this position
+         (println "Opening datasource...")
+         (hikari/make-datasource (:jdbc @config))
 
+         :stop
+         (println "Closing datasource...")
+         (hikari/close-datasource this)))
+```
+
+Let's quickly inspect one of the State objects we have just created:
+
+```clj
 config
 ;=> #<State@247136[user/state--312]: :not-delivered>
 
@@ -118,9 +125,9 @@ Therefore the above can also be written as follows:
 ```
 
 Users of [mount](https://github.com/tolitius/mount) or [mount-lite](https://github.com/aroemers/mount-lite) will recognize above syntax.
-Trying to redefine a `defstate` which is active (i.e. realized) is skipped.
+Trying to redefine a `defstate` which is active (i.e. realized) is skipped and yields a warning.
 
-The `defstate` macro fully supports metadata on the name, a docstring and an attribute map.
+The `defstate` macro fully supports metadata on the name, a docstring and an attribute map (just like `defn`).
 Note that this metadata is set on the var.
 If you want metadata on a State, you can use **a `:meta` expression** in the body of the `state` macro, or use Clojure's `with-meta` on it.
 
