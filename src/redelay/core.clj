@@ -4,6 +4,11 @@
    :clojure.tools.namespace.repl/unload false}
   (:require [clojure.pprint :refer [simple-dispatch]]))
 
+;;; Force closing.
+
+(defprotocol ForceCloseable
+  (close! [this] "Close the State, skipping the stop logic."))
+
 ;;; Watchpoint.
 
 (defonce ^{:doc "Add watches to this var to be notified of
@@ -33,9 +38,17 @@
   (close [this]
     (locking this
       (when (realized? this)
-        (stop-fn @value)
-        (reset! value unrealized)
-        (.notifyWatches watchpoint this nil))))
+        (try
+          (stop-fn @value)
+          (reset! value unrealized)
+          (.notifyWatches watchpoint this nil)
+          (catch Exception e
+            (throw (ex-info "Exception thrown when closing state" {:state this} e)))))))
+
+  ForceCloseable
+  (close! [this]
+    (reset! value unrealized)
+    (.notifyWatches watchpoint this nil))
 
   clojure.lang.Named
   (getNamespace [_]

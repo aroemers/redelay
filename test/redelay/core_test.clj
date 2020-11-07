@@ -1,5 +1,5 @@
 (ns redelay.core-test
-  (:require [redelay.core :refer [state status stop state? defstate state*]]
+  (:require [redelay.core :refer [state status stop state? defstate state* close!]]
             [clojure.test :as test :refer [deftest is]]))
 
 (defn ensure-stop [f]
@@ -53,3 +53,10 @@
   (let [just-start (state* {:start-fn (fn [] true)})]
     (is @just-start)
     (stop)))
+
+(deftest force-close-test
+  (let [buggy-stop (state "hi" :stop (inc this))]
+    (is (= @buggy-stop "hi"))
+    (is (thrown? Exception (stop)))
+    (close! buggy-stop)
+    (is (= () (stop)))))
