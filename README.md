@@ -27,11 +27,11 @@ First we need to require the small API of redelay:
 Next we use the `state` macro to create two State objects.
 
 ```clj
-(def config 
+(def config
   (state (println "Loading config...")
          (edn/read-string (slurp "config.edn")))
 
-(def db 
+(def db
   (state :start  ; <-- optional in this position
          (println "Opening datasource...")
          (hikari/make-datasource (:jdbc @config))
@@ -102,6 +102,8 @@ Closing datasource...
 ```
 
 So no matter where your state lives, you can reset it and start afresh.
+
+Oh and if a State's stop expression has a bug or can't handle its value, you can always force it to close with `close!`.
 
 ### Naming and defstate
 

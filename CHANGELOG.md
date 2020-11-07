@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.1.0
+
+### Added
+
+- The function `close!` was added, which closes a State by force by skipping its stop logic.
+
+
 ## 1.0.3
 
 ### Added
