@@ -82,7 +82,9 @@ Subsequent derefs return the cached value.
 A State implements Java's `Closeable`, so you _could_ call `.close` on it.
 This will execute the `:stop` expression and clear its cache.
 Now the State is ready to be realized again.
-However, **redelay keeps track of which states are realized and thus active.**
+This is where it differs from a standard Delay.
+
+What's more, **redelay keeps track of which states are realized and thus active.**
 You can see which states are active by calling `(status)`:
 
 ```clj
@@ -93,6 +95,7 @@ You can see which states are active by calling `(status)`:
 
 Because the active states are tracked, you can easily stop _all_ of them by calling `(stop)`.
 All the active states are stopped (i.e. closed), in the reverse order of their realization.
+So while you can call `.close` on them, oftentimes you don't need to.
 
 ```clj
 (stop)
