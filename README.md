@@ -16,7 +16,7 @@ This library allows you to easily start and reset the stateful parts of your app
 Being ablo to easily restart these in the right order makes REPL-driven development easier, faster and _more fun_.
 This is also known as Stuart Sierra's [reloaded workflow](https://www.cognitect.com/blog/2013/06/04/clojure-workflow-reloaded).
 
-Using this library you create first class **State** objects.
+With this library you create first class **State** objects.
 Think of them as Clojure's [delay](https://clojuredocs.org/clojure.core/delay), but **resettable** and **tracked**.
 
 ### The basics
@@ -60,9 +60,9 @@ There are several things to note here.
 
 - The expressions are **qualified by a keyword**, such as `:start` and `:stop`.
 - All **expressions** are **optional**.
-- An expression can consist of multiple forms, wrapped in an implicit `do`.
+- An expression can consist of **multiple forms**, wrapped in an implicit `do`.
 - The first forms in the `state` body are considered to be the `:start` expression, if not qualified otherwise.
-- The `:stop` expression has access to **a `this` parameter**, bound to the state's value.
+- The `:stop` expression has access to a **`this` parameter**, bound to the state's value.
 - You can call `realized?` on a state, just like you can on a delay.
 
 Now let's start and use our states.
@@ -82,7 +82,7 @@ Opening datasource...
 ;=> true
 ```
 
-In the example you can see that the `:start` expressions of the states are only executed once.
+You can see that the `:start` expressions are only executed once.
 Subsequent derefs return the cached value.
 
 A state implements Java's `Closeable`, so you _could_ call `.close` on it.
@@ -99,9 +99,9 @@ You can see which states are active by calling `(status)`:
 ;=>  #<State@329663[user/state--315]: org.postgresql.ds.PGSimpleDataSource@267825>)
 ```
 
-Because the active states are tracked, you can easily stop all of them by calling `(stop)`.
-All the active states are stopped (i.e. closed), in the **reverse order of their realization**.
-So while you can call `.close` on them, oftentimes you don't need to.
+Because the active states are tracked, you can easily stop them by calling `(stop)`.
+All the active states are stopped (i.e. closed) in the **reverse order of their realization**.
+So while you can call `.close` on the individual states, oftentimes you don't need to.
 
 ```clj
 (stop)
@@ -116,7 +116,7 @@ Oh and if a state's stop expression has a bug or can't handle its value, you can
 
 ### Naming and defstate
 
-Next to the `:start` and `:stop` expressions, you can also pass a `:name` to the `state` macro.
+Next to the `:start` and `:stop` expressions, you can pass a `:name` to the `state` macro.
 This makes recognizing the states easier.
 The `:name` expression must be a symbol.
 
@@ -143,7 +143,7 @@ Note that this metadata is set on the var.
 If you want **metadata** on a State, you can use `:meta` expression, or use Clojure's `with-meta` on it.
 
 Next to metadata support, Clojure's `namespace` and `name` functions also work on states.
-For example, this may yield an easier to read status list:
+This may yield an easier to read status list for example:
 
 ```clj
 (map name (status))
@@ -185,7 +185,7 @@ You may structure and use your states differently.
 The examples above have bound the states to global vars.
 This is not required.
 **State objects can live anywhere** and can be passed around like any other object.
-If you prefer a less global approach, using a map of states for example - either dereferenced or not - then that's perfectly feasible as well.
+A less global approach using a map of states for example - either dereferenced or not - is perfectly feasible as well.
 
 By its first class and unassuming nature this library aims to support **the whole spectrum** of [mount](https://github.com/aroemers/mount-lite)-like global states to [Component](https://github.com/stuartsierra/component)-like system maps to [Integrant](https://github.com/weavejester/integrant)-like data-driven approaches.
 This is also the reason that redelay **does not have some sort of "start" or "init" function**.
@@ -196,7 +196,7 @@ By the way, if you prefer system maps, have a look at **the [rmap](https://githu
 ### Extending redelay
 
 The redelay library is **minimal on purpose**.
-It just the the State object and the two basic management functions `(status)` and `(stop)`.
+It's just the the State object and the two basic management functions `(status)` and `(stop)`.
 Those two functions are actually implemented using the library's extension point: **the watchpoint**.
 
 The library has a public `watchpoint` var.
