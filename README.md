@@ -13,7 +13,7 @@ A Clojure library for state lifecycle-management using resettable delays, inspir
 ## Usage
 
 This library allows you to easily start and reset the stateful parts of your application, such as database connections, web servers, schedulers and caches.
-Being ablo to easily restart these in the right order makes REPL-driven development easier, faster and _more fun_.
+Being able to easily restart these in the right order makes REPL-driven development easier, faster and _more fun_.
 This is also known as Stuart Sierra's [reloaded workflow](https://www.cognitect.com/blog/2013/06/04/clojure-workflow-reloaded).
 
 With this library you create first class **State** objects.
