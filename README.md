@@ -25,7 +25,7 @@ The API is very small.
 All you need to require is this:
 
 ```clj
-(require '[redelay.core :refer [state status stop]])
+(require '[redelay.core :refer [state status stop]]) ; or `defstate` instead of `state`, see below
 ```
 
 To create a State object you use the `state` macro.
@@ -59,9 +59,9 @@ config
 There are several things to note here.
 
 - The expressions are **qualified by a keyword**, such as `:start` and `:stop`.
+- The first expression is considered to be the `:start` expression, if not qualified otherwise.
 - All **expressions** are **optional**.
 - An expression can consist of **multiple forms**, wrapped in an implicit `do`.
-- The first forms in the `state` body are considered to be the `:start` expression, if not qualified otherwise.
 - The `:stop` expression has access to a **`this` parameter**, bound to the state's value.
 - You can call `realized?` on a state, just like you can on a delay.
 
@@ -137,6 +137,8 @@ Therefore the above can also be written as follows:
 
 Users of [mount](https://github.com/tolitius/mount) or [mount-lite](https://github.com/aroemers/mount-lite) will recognize above syntax.
 Trying to redefine a `defstate` which is active (i.e. realized) is skipped and yields a warning.
+
+#### Some other details
 
 The `defstate` macro fully supports metadata on the name, a docstring and an attribute map (just like `defn`).
 Note that this metadata is set on the var.
