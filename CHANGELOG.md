@@ -1,5 +1,20 @@
 # Change Log
 
+## Unreleased
+
+### Added
+
+- The `defstate` macro now declares the resulting var as `:dynamic`. This enables the use of `binding` in tests.
+
+### Changed
+
+- The string representation of an unrealized State object now says `:unrealized` instead of `:not-delivered`.
+- The string representation of a realized State object now adheres to a `*print-length*` of 10.
+
+### Fixed
+
+- The `defstate` macro no longer confuses a string and/or map as a docstring and/or metadata if no subsequent expressions are given. For example, this now works correctly: `(defstate foo "bar")`.
+
 ## 1.1.0
 
 ### Added

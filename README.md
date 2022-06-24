@@ -6,13 +6,13 @@
 
 # 🏖 redelay
 
-A Clojure library for state lifecycle-management using resettable delays, inspired by [mount-lite](https://github.com/aroemers/mount-lite), decomplected from any methodology.
+A Clojure library for **state lifecycle-management** using **tracked** and **resettable** delays, inspired by [mount-lite](https://github.com/aroemers/mount-lite), decomplected from any methodology.
 
 ![Banner](banner.png)
 
 ## Usage
 
-This library allows you to easily start and reset the stateful parts of your application, such as database connections, web servers, schedulers and caches.
+This library allows you to easily start and stop the stateful parts of your application, such as database connections, web servers, schedulers and caches.
 Being able to easily restart these in the right order makes REPL-driven development easier, faster and _more fun_.
 This is also known as Stuart Sierra's [reloaded workflow](https://www.cognitect.com/blog/2013/06/04/clojure-workflow-reloaded).
 
@@ -25,11 +25,11 @@ The API is very small.
 All you need to require is this:
 
 ```clj
-(require '[redelay.core :refer [state status stop]]) ; or `defstate` instead of `state`, see below
+(require '[redelay.core :refer [state status stop]])
 ```
 
-To create a State object you use the `state` macro.
-Let's create two states for our examples.
+To create a State object you use the `state` macro, or the `defstate` macro as you'll see later on.
+Let's create two states for our examples, the second one depending on the first one.
 
 ```clj
 (def config
@@ -50,7 +50,7 @@ Let's quickly inspect one of the states we have just created:
 
 ```clj
 config
-;=> #<State@247136[user/state--312]: :not-delivered>
+;=> #<State@247136[user/state--312]: :unrealized>
 
 (realized? config)
 ;=> false
@@ -58,12 +58,12 @@ config
 
 There are several things to note here.
 
-- The expressions are **qualified by a keyword**, such as `:start` and `:stop`.
+- The expressions inside `state` are **qualified by a keyword**, such as `:start` and `:stop`.
 - The first expression is considered to be the `:start` expression, if not qualified otherwise.
 - All **expressions** are **optional**.
 - An expression can consist of **multiple forms**, wrapped in an implicit `do`.
 - The `:stop` expression has access to a **`this` parameter**, bound to the state's value.
-- You can call `realized?` on a state, just like you can on a delay.
+- You can call `clojure.core/realized?` on a state, just like you can on a delay.
 
 Now let's start and use our states.
 Just like a delay, the first time a state is consulted by a `deref` (or `force`), it is realized.
@@ -90,7 +90,7 @@ This will execute the `:stop` expression and clear its cache.
 Now the state is ready to be realized again.
 This is where it differs from a standard delay.
 
-What's more, **redelay keeps track of which states are realized and thus active.**
+However, **redelay keeps track of which states are realized and thus active.**
 You can see which states are active by calling `(status)`:
 
 ```clj
@@ -99,20 +99,21 @@ You can see which states are active by calling `(status)`:
 ;=>  #<State@329663[user/state--315]: org.postgresql.ds.PGSimpleDataSource@267825>)
 ```
 
-Because the active states are tracked, you can easily stop them by calling `(stop)`.
+Because the active states are tracked, you can easily stop them all by calling `(stop)`.
 All the active states are stopped (i.e. closed) in the **reverse order of their realization**.
 So while you can call `.close` on the individual states, oftentimes you don't need to.
 
 ```clj
 (stop)
 Closing datasource...
-;=> (#<State@329663[user/state--315]: :not-delivered>
-;=>  #<State@247136[user/state--312]: :not-delivered>)
+;=> (#<State@329663[user/state--315]: :unrealized>
+;=>  #<State@247136[user/state--312]: :unrealized>)
 ```
 
-So no matter where your state lives, you can reset it and start afresh.
+So **no matter where your state lives**, you can reset it and start afresh.
+Even if you've lost the reference to it.
 
-Oh and if a state's stop expression has a bug or can't handle its value, you can always force it to close with `close!`.
+Oh and if an active state's `:stop` expression has a bug or can't handle its value, you can always force it to close with `close!`.
 
 ### Naming and defstate
 
@@ -125,7 +126,7 @@ The `:name` expression must be a symbol.
 ;=> #'user/config
 
 config
-;=> #<State@19042[user/config]: :not-delivered>
+;=> #<State@19042[user/config]: :unrealized>
 ```
 
 If you bind your state to a global var, it is common to have the name to be equal to the var it is bound to.
@@ -142,7 +143,18 @@ Trying to redefine a `defstate` which is active (i.e. realized) is skipped and y
 
 The `defstate` macro fully supports metadata on the name, a docstring and an attribute map (just like `defn`).
 Note that this metadata is set on the var.
-If you want **metadata** on a State, you can use `:meta` expression, or use Clojure's `with-meta` on it.
+If you want **metadata** on a State, you can use `:meta` expression inside `state`, or use Clojure's `with-meta` on it.
+So a full `defstate` could look like this:
+
+```clj
+(defstate ^:awesome my-state
+  "My docstring"
+  {:extra-awesome true}
+
+  :start (start-it ...)
+  :stop  (stop-it this)
+  :meta  {:meta-for 'state})
+```
 
 Next to metadata support, Clojure's `namespace` and `name` functions also work on states.
 This may yield an easier to read status list for example:
@@ -157,30 +169,31 @@ This may yield an easier to read status list for example:
 Since state in redelay is handled as first class objects, there are all kinds of testing strategies.
 It all depends a bit on where you keep your State objects (discussed in next section).
 
-For the examples above you can simply use plain old `with-redefs` to your hearts content.
+For the examples above you can simply use plain old `with-redefs` or `binding` to your hearts content.
+The `binding` is possible for states created with `defstate`, as those are declared as dynamic for you.
+
 We can redefine "production" states to other states, or even to a plain `delay`.
 There is **no need for a special API** to support testing.
 For example:
 
 ```clj
 (deftest test-in-memory
-  (with-redefs [config (delay {:jdbc-url "jdbc:derby:..."})]
+  (binding [config (delay {:jdbc-url "jdbc:derby:..."})]
     (is (instance? org.apache.derby.jdbc.ClientDataSource @db))))
 ```
 
-A nice addition might be to add a fixture to your tests, ensuring `(stop)` is always called after a test.
-
-Another option would be to use Clojure's `with-open`, since states implement `Closeable`:
+Another option is to use Clojure's `with-open`, since states implement `Closeable`:
 
 ```clj
 (deftest test-in-memory
-  (with-open [config (state {:jdbc-url "jdbc:derby:..."})
-              db     (state (make-datasource (:jdbc-url @config)))]
+  (with-open [db (state (make-datasource "jdbc:derby:..."})
     (is (instance? org.apache.derby.jdbc.ClientDataSource @db))))
 ```
 
+You could add a fixture in your test suite, ensuring `(stop)` is always called after a test.
+
 Again, these are just examples.
-You may structure and use your states differently.
+You may structure and use your states completely different, as you'll see next.
 
 ### Global versus local state
 
@@ -213,7 +226,7 @@ _That's it for simple lifecycle management around the stateful parts of your app
 
 ## License
 
-Copyright © 2020-2021 Functional Bytes
+Copyright © 2020-2022 Functional Bytes
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at

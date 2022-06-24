@@ -4,20 +4,19 @@
    :clojure.tools.namespace.repl/unload false}
   (:require [clojure.pprint :refer [simple-dispatch]]))
 
-;;; Force closing.
-
-(defprotocol ForceCloseable
-  (close! [this] "Close the State, skipping the stop logic."))
-
 ;;; Watchpoint.
 
 (defonce ^{:doc "Add watches to this var to be notified of
   new (started) or old (closed) states."}
   watchpoint (var watchpoint))
 
+
 ;;; State object.
 
 (defonce ^:private unrealized `Unrealized)
+
+(defprotocol ^:no-doc ForceCloseable
+  (force-close [this]))
 
 (deftype State [name start-fn stop-fn value meta]
   clojure.lang.IDeref
@@ -25,13 +24,16 @@
     (when-not (realized? this)
       (locking this
         (when-not (realized? this)
-          (let [result (start-fn)]
-            (reset! value result)
-            (.notifyWatches watchpoint nil this)))))
+          (try
+            (let [result (start-fn)]
+              (reset! value result)
+              (.notifyWatches watchpoint nil this))
+            (catch Exception e
+              (throw (ex-info "Exception thrown when starting state" {:state this} e)))))))
     @value)
 
   clojure.lang.IPending
-  (isRealized [this]
+  (isRealized [_]
     (not= @value unrealized))
 
   java.io.Closeable
@@ -46,7 +48,7 @@
             (throw (ex-info "Exception thrown when closing state" {:state this} e)))))))
 
   ForceCloseable
-  (close! [this]
+  (force-close [this]
     (reset! value unrealized)
     (.notifyWatches watchpoint this nil))
 
@@ -61,17 +63,16 @@
     meta)
 
   clojure.lang.IObj
-  (withMeta [this meta]
+  (withMeta [_ meta]
     (State. name start-fn stop-fn value meta))
 
   Object
   (toString [this]
     (let [addr (Integer/toHexString (System/identityHashCode this))
           val  (if (realized? this)
-                 (if (some? @value)
-                   (str @value)
-                   "nil")
-                 :not-delivered)]
+                 (binding [*print-length* 10]
+                   (pr-str @value))
+                 :unrealized)]
       (str "#<State@" addr "[" name "]: " val ">"))))
 
 (defmethod print-method State [state ^java.io.Writer writer]
@@ -82,17 +83,17 @@
 
 (defn- name-with-exprs [name [arg1 arg2 & argx :as args]]
   (let [[attrs args]
-        (cond (and (string? arg1) (map? arg2)) [(assoc arg2 :doc arg1) argx]
-              (string? arg1)                   [{:doc arg1} (cons arg2 argx)]
-              (map? arg1)                      [arg1 (cons arg2 argx)]
-              :otherwise                       [{} args])]
-    [(with-meta name (merge (meta name) attrs {:defstate true})) args]))
+        (cond (and (string? arg1) (map? arg2) (seq argx)) [(assoc arg2 :doc arg1) (drop 2 args)]
+              (and (string? arg1) (seq (drop 1 args)))    [{:doc arg1}            (drop 1 args)]
+              (and (map? arg1) (seq (drop 1 args)))       [arg1                   (drop 1 args)]
+              :else                                       [{}                     args])]
+    [(with-meta name (merge (meta name) attrs {:defstate true, :dynamic true})) args]))
 
 (defn- qualified-exprs [qualifiers exprs]
   (loop [qualifiers (set qualifiers)
          exprs      exprs
          qualifier  nil
-        qualified  {}]
+         qualified  {}]
     (if (seq exprs)
       (let [expr (first exprs)]
         (if-let [qualifier (qualifiers expr)]
@@ -105,6 +106,7 @@
 (defn- skip-defstate? [ns name]
   (let [state (some-> (ns-resolve ns name) deref)]
     (and (state? state) (realized? state))))
+
 
 ;;; Public API
 
@@ -161,11 +163,17 @@
       `(def ~name
          (state ~@exprs :name ~(symbol (str *ns*) (str name)))))))
 
+(defn close!
+  "Close the State, skipping the stop logic."
+  [state]
+  (force-close state))
+
+
 ;;; Default management.
 
 (defonce ^:private closeables (java.util.LinkedHashSet.))
 
-(defn- default-watch [_ state old new]
+(defn- default-watch [_ _ old new]
   (if new
     (.add closeables new)
     (.remove closeables old)))
@@ -185,12 +193,12 @@
       (.close closeable))
     ordered))
 
+
 ;;; Enhance clojure.core/force
 
-(defonce ^:private wrapped-force
-  (alter-var-root #'clojure.core/force
-   (fn [original]
-     (fn [x]
-       (if (state? x)
-         (deref x)
-         (original x))))))
+(alter-var-root #'clojure.core/force
+  (fn [original]
+    (fn [x]
+      (if (state? x)
+        (deref x)
+        (original x)))))
