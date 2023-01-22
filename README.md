@@ -226,7 +226,7 @@ _That's it for simple lifecycle management around the stateful parts of your app
 
 ## License
 
-Copyright © 2020-2022 Functional Bytes
+Copyright © 2020-2023 Functional Bytes
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
