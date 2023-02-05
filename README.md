@@ -113,7 +113,9 @@ Closing datasource...
 So **no matter where your state lives**, you can reset it and start afresh.
 Even if you've lost the reference to it.
 
-Oh and if an active state's `:stop` expression has a bug or can't handle its value, you can always force it to close with `close!`.
+Oh, two more things.
+If an active state's `:stop` expression has a bug or can't handle its value, you can always force it to close with `close!`.
+And if you want to inspect the value of a state, without starting it, there's `deref?`.
 
 ### Naming and defstate
 

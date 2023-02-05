@@ -15,8 +15,9 @@
 
 (defonce ^:private unrealized `Unrealized)
 
-(defprotocol ^:no-doc ForceCloseable
-  (force-close [this]))
+(defprotocol ^:no-doc StateFunctions
+  (force-close [this])
+  (deref-realized [this not-realized]))
 
 (deftype State [name start-fn stop-fn value meta]
   clojure.lang.IDeref
@@ -47,10 +48,16 @@
           (catch Exception e
             (throw (ex-info "Exception thrown when closing state" {:state this} e)))))))
 
-  ForceCloseable
+  StateFunctions
   (force-close [this]
     (reset! value unrealized)
     (.notifyWatches watchpoint this nil))
+
+  (deref-realized [this not-realized]
+    (locking this
+      (if (realized? this)
+        @value
+        not-realized)))
 
   clojure.lang.Named
   (getNamespace [_]
@@ -167,6 +174,14 @@
   "Close the State, skipping the stop logic."
   [state]
   (force-close state))
+
+(defn deref?
+  "Returns the value of the state if realized, otherwise returns
+  not-realized or nil."
+  ([state]
+   (deref? state nil))
+  ([state not-realized]
+   (deref-realized state not-realized)))
 
 
 ;;; Default management.

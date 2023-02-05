@@ -5,6 +5,7 @@
 ### Added
 
 - The `defstate` macro now declares the resulting var as `:dynamic`. This enables the use of `binding` in tests.
+- The function `deref?`, which lets you inspect the value of a state, without starting it.
 
 ### Changed
 
