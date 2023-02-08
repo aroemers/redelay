@@ -11,10 +11,8 @@
 
 - The string representation of an unrealized State object now says `:unrealized` instead of `:not-delivered`.
 - The string representation of a realized State object now adheres to a `*print-length*` of 10.
-
-### Fixed
-
-- The `defstate` macro no longer confuses a string and/or map as a docstring and/or metadata if no subsequent expressions are given. For example, this now works correctly: `(defstate foo "bar")`.
+- [BREAKING] The low-level `state*` function now takes a `:name` key, instead of `:ns-str` and `:name-str`. The new entry must be a value and is still optional.
+- [BREAKING] The `defstate` macro no longer supports a docstring or attribute map. It conflicted with start values which were Strings or maps. Metadata on the name symbol is still supported. So instead of `(defstate foo "docstring" ...)` you should now write `(defstate ^{:doc "docstring"} foo ...)`.
 
 ## 1.1.0
 

@@ -88,14 +88,6 @@
 (defmethod simple-dispatch State [state]
   (.write *out* (str state)))
 
-(defn- name-with-exprs [name [arg1 arg2 & argx :as args]]
-  (let [[attrs args]
-        (cond (and (string? arg1) (map? arg2) (seq argx)) [(assoc arg2 :doc arg1) (drop 2 args)]
-              (and (string? arg1) (seq (drop 1 args)))    [{:doc arg1}            (drop 1 args)]
-              (and (map? arg1) (seq (drop 1 args)))       [arg1                   (drop 1 args)]
-              :else                                       [{}                     args])]
-    [(with-meta name (merge (meta name) attrs {:defstate true, :dynamic true})) args]))
-
 (defn- qualified-exprs [qualifiers exprs]
   (loop [qualifiers (set qualifiers)
          exprs      exprs
@@ -121,12 +113,15 @@
   "Low-level function to create a State object. All keys are optional.
   The `:start-fn` value must be a 0-arity function. The `:stop-fn`
   value must be a 1-arity function. The `:meta` value must be a map."
-  [{:keys [ns-str name-str start-fn stop-fn meta]
-    :or   {start-fn (fn [])
+  [{:keys [name start-fn stop-fn meta]
+    :or   {name     (gensym "state--")
+           start-fn (fn [])
            stop-fn  (fn [_])}}]
-  (let [name (symbol ns-str (or name-str (str (gensym "state--"))))]
-    (with-meta (State. name start-fn stop-fn (atom unrealized) nil)
-      meta)))
+  (assert (symbol? name) "value of :name must be a symbol")
+  (assert (fn? start-fn) "value of :start-fn must be a function")
+  (assert (fn? stop-fn) "value of :stop-fn must be a function")
+  (assert (or (nil? meta) (map? meta)) "value of :meta must be a map")
+  (State. name start-fn stop-fn (atom unrealized) meta))
 
 (defmacro state
   "Create a state object, using the optional :start, :stop, :name
@@ -140,12 +135,12 @@
     (assert (not (and start implicit-start)) "start expression must be explicit or implicit")
     (assert (< (count names) 2) "name expression must be a single symbol")
     (assert (< (count metas) 2) "meta expression must be a single map")
-    (let [start (or start implicit-start)
-          name  (first names)
-          meta  (first metas)]
+    (let [start        (or start implicit-start)
+          name         (first names)
+          meta         (first metas)
+          default-name (symbol (str *ns*) (str (gensym "state--")))]
       (assert (or (nil? name) (symbol? name)) "name must be symbol")
-      `(state* {:ns-str   ~(if name (namespace name) (str *ns*))
-                :name-str ~(when name (clojure.core/name name))
+      `(state* {:name     '~(or name default-name)
                 :start-fn (fn [] ~@start)
                 :stop-fn  (fn [~'this] ~@stop)
                 :meta     ~meta}))))
@@ -158,17 +153,18 @@
 (defmacro defstate
   "Create a State object, using the optional :start, :stop and :meta
   expressions, and bind it to a var with the given name in the current
-  namespace. Supports metadata on the name, a docstring and an
-  attribute map. Trying to redefine an active (i.e. realized) defstate
+  namespace. Trying to redefine an active (i.e. realized) defstate
   is skipped."
   {:arglists '([name doc-string? attr-map? body])}
   [name & exprs]
   (if (skip-defstate? *ns* name)
     (binding [*out* *err*]
       (println "WARNING: skipping redefinition of active defstate" name))
-    (let [[name exprs] (name-with-exprs name exprs)]
-      `(def ~name
-         (state ~@exprs :name ~(symbol (str *ns*) (str name)))))))
+    (let [default-meta   {:dynamic true, :defstate true}
+          name-with-meta (with-meta name (merge default-meta (meta name)))
+          qualified-name (symbol (str *ns*) (str name))]
+      `(def ~name-with-meta
+         (state ~@exprs :name ~qualified-name)))))
 
 (defn close!
   "Close the State, skipping the stop logic."

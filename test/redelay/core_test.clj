@@ -17,8 +17,6 @@
         stopped (promise)]
 
     (defstate ^:private baz
-      "My docstring"
-      {:extra :attribute}
       :start (dec @bar) (inc @bar)
       :stop  (deliver stopped this)
       :meta  {:dev true})
@@ -47,8 +45,8 @@
     (is (= "bar" (name bar)))
     (is (= "baz" (name baz)))
 
-    (is (= {:doc "My docstring", :private true, :extra :attribute}
-           (select-keys (meta #'baz) [:doc :private :extra])))
+    (is (= {:private true, :dynamic true, :defstate true}
+           (select-keys (meta #'baz) [:private :dynamic :defstate])))
     (is (= {:dev true} (meta baz)))))
 
 (deftest low-level-test
