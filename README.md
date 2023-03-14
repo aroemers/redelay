@@ -115,7 +115,7 @@ Even if you've lost the reference to it.
 
 Oh, two more things.
 If an active state's `:stop` expression has a bug or can't handle its value, you can always force it to close with `close!`.
-And if you want to inspect the value of a state, without starting it, there's `deref?`.
+And if you want to inspect the value of a state, without starting it, you can use Clojure's `peek` on it.
 
 ### Naming and defstate
 
@@ -145,7 +145,7 @@ Trying to redefine a `defstate` which is active (i.e. realized) is skipped and y
 
 The `defstate` macro supports metadata on the name symbol.
 Note that this metadata is set on the var.
-If you want **metadata** on the State object, you can use `:meta` expression inside `state`, or use Clojure's `with-meta` on it.
+If you want **metadata** on the State object, you can use `:meta` expression inside `state`, or use Clojure's `alter-meta!` or `reset-meta!` on it.
 So a full `defstate` could look like this:
 
 ```clj
