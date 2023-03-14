@@ -16,8 +16,7 @@
 (defonce ^:private unrealized `Unrealized)
 
 (defprotocol ^:no-doc StateFunctions
-  (force-close [this])
-  (deref-realized [this not-realized]))
+  (force-close [this]))
 
 (deftype State [name start-fn stop-fn value meta]
   clojure.lang.IDeref
@@ -48,16 +47,16 @@
           (catch Exception e
             (throw (ex-info "Exception thrown when closing state" {:state this} e)))))))
 
+  clojure.lang.IPersistentStack
+  (peek [this]
+    (locking this
+      (when (realized? this)
+        @value)))
+
   StateFunctions
   (force-close [this]
     (reset! value unrealized)
     (.notifyWatches watchpoint this nil))
-
-  (deref-realized [this not-realized]
-    (locking this
-      (if (realized? this)
-        @value
-        not-realized)))
 
   clojure.lang.Named
   (getNamespace [_]
@@ -126,9 +125,12 @@
 (defmacro state
   "Create a state object, using the optional :start, :stop, :name
   and :meta expressions. The first forms are implicitly considered as
-  the :start expression, if not qualified otherwise. Returned State
-  object implements IDeref, IPending, Closeable, Named, IMeta and
-  IObj."
+  the :start expression, if not qualified otherwise.
+
+  Returned State object implements IDeref (`deref`),
+  IPending (`realized?`), Closeable (`.close`),
+  IPersistentStack (`peek`), Named (`name`, `namespace`),
+  IMeta (`meta`) and IObj (`with-meta`)."
   [& exprs]
   (let [{:keys [start stop] names :name metas :meta implicit-start nil}
         (qualified-exprs [:start :stop :name :meta] exprs)]
@@ -170,14 +172,6 @@
   "Close the State, skipping the stop logic."
   [state]
   (force-close state))
-
-(defn deref?
-  "Returns the value of the state if realized, otherwise returns
-  not-realized or nil."
-  ([state]
-   (deref? state nil))
-  ([state not-realized]
-   (deref-realized state not-realized)))
 
 
 ;;; Default management.
