@@ -11,8 +11,8 @@
 
 - The string representation of an unrealized State object now says `:unrealized` instead of `:not-delivered`.
 - The string representation of a realized State object now adheres to a `*print-length*` of 10.
-- ❗️BREAKING: The low-level `state*` function now takes a `:name` key, instead of `:ns-str` and `:name-str`. The new entry must be a value and is still optional.
-- ❗️BREAKING: The `defstate` macro no longer supports a docstring or attribute map. It conflicted with start values which were Strings or maps. Metadata on the name symbol is still supported. So instead of `(defstate foo "docstring" ...)` you should now write `(defstate ^{:doc "docstring"} foo ...)`.
+- ❗️BREAKING: The low-level `state*` function now takes a `:name` key, instead of `:ns-str` and `:name-str`. The new entry must be a symbol and is still optional.
+- ❗️BREAKING: The `defstate` macro no longer supports a docstring or attribute map. It conflicted with start values which were strings or maps. Metadata on the name symbol is still supported. So instead of `(defstate foo "docstring" ...)` you should now write `(defstate ^{:doc "docstring"} foo ...)`.
 - ❗️BREAKING: The State object now implements `IReference` instead of `IObj`. This means that `with-meta` support has been replaced with `alter-meta!` and `reset-meta!`. This way updating meta data does not result in a new State object anymore.
 
 ## 1.1.0
