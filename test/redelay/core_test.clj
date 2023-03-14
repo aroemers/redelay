@@ -47,12 +47,26 @@
 
     (is (= {:private true, :dynamic true, :defstate true}
            (select-keys (meta #'baz) [:private :dynamic :defstate])))
-    (is (= {:dev true} (meta baz)))))
+    (is (= {:dev true} (meta baz)))
+    (is (= {:dev false} (alter-meta! baz update :dev not)))
+    (is (= {:answer 42} (reset-meta! baz {:answer 42})))))
 
 (deftest low-level-test
-  (let [just-start (state* {:start-fn (fn [] true)})]
-    (is @just-start)
-    (stop)))
+  (let [state (state* {:start-fn (fn [] true)})]
+    (is @state)
+    (stop))
+
+  (let [stopped (promise)
+        state   (state* {:start-fn (fn [] 42)
+                         :stop-fn  (fn [this] (deliver stopped this))
+                         :name     'my-name
+                         :meta     {:low-level true}})]
+    (is (= 42 @state))
+    (stop)
+    (is (= 42 @stopped))
+    (is (nil? (namespace state)))
+    (is (= "my-name" (name state)))
+    (is (= {:low-level true} (meta state)))))
 
 (deftest force-close-test
   (let [buggy-stop (state "hi" :stop (inc this))]

@@ -66,11 +66,13 @@
 
   clojure.lang.IMeta
   (meta [_]
-    meta)
+    @meta)
 
-  clojure.lang.IObj
-  (withMeta [_ meta]
-    (State. name start-fn stop-fn value meta))
+  clojure.lang.IReference
+  (alterMeta [_ f args]
+    (apply swap! meta f args))
+  (resetMeta [_ m]
+    (reset! meta m))
 
   Object
   (toString [this]
@@ -83,7 +85,6 @@
 
 (defmethod print-method State [state ^java.io.Writer writer]
   (.write writer (str state)))
-
 (defmethod simple-dispatch State [state]
   (.write *out* (str state)))
 
@@ -120,7 +121,7 @@
   (assert (fn? start-fn) "value of :start-fn must be a function")
   (assert (fn? stop-fn) "value of :stop-fn must be a function")
   (assert (or (nil? meta) (map? meta)) "value of :meta must be a map")
-  (State. name start-fn stop-fn (atom unrealized) meta))
+  (State. name start-fn stop-fn (atom unrealized) (atom meta)))
 
 (defmacro state
   "Create a state object, using the optional :start, :stop, :name
@@ -130,7 +131,7 @@
   Returned State object implements IDeref (`deref`),
   IPending (`realized?`), Closeable (`.close`),
   IPersistentStack (`peek`), Named (`name`, `namespace`),
-  IMeta (`meta`) and IObj (`with-meta`)."
+  IMeta (`meta`) and IReference (`alter-meta!`, `reset-meta!`)."
   [& exprs]
   (let [{:keys [start stop] names :name metas :meta implicit-start nil}
         (qualified-exprs [:start :stop :name :meta] exprs)]
