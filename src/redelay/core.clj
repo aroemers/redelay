@@ -2,13 +2,16 @@
   "Core API for creating and managing first class state objects."
   {:clojure.tools.namespace.repl/load   false
    :clojure.tools.namespace.repl/unload false}
-  (:require [clojure.pprint :refer [simple-dispatch]]))
+  (:require [clojure.pprint :as pprint]))
 
 ;;; Watchpoint.
 
-(defonce ^{:doc "Add watches to this var to be notified of
-  new (started) or old (closed) states."}
-  watchpoint (var watchpoint))
+(defonce ^{:doc "Add watches to this var to be notified of state changes, using
+  `add-watch`. The third argument to the watch fn will be one of
+  `:starting`, `:started`, `:stopping` or `:stopped`. The fourth
+   argument is the State object."}
+  watchpoint
+  (var watchpoint))
 
 
 ;;; State object.
@@ -25,9 +28,10 @@
       (locking this
         (when-not (realized? this)
           (try
+            (.notifyWatches watchpoint :starting this)
             (let [result (start-fn)]
               (reset! value result)
-              (.notifyWatches watchpoint nil this))
+              (.notifyWatches watchpoint :started this))
             (catch Exception e
               (throw (ex-info "Exception thrown when starting state" {:state this} e)))))))
     @value)
@@ -41,9 +45,10 @@
     (locking this
       (when (realized? this)
         (try
+          (.notifyWatches watchpoint :stopping this)
           (stop-fn @value)
           (reset! value unrealized)
-          (.notifyWatches watchpoint this nil)
+          (.notifyWatches watchpoint :stopped this)
           (catch Exception e
             (throw (ex-info "Exception thrown when closing state" {:state this} e)))))))
 
@@ -56,7 +61,7 @@
   StateFunctions
   (force-close [this]
     (reset! value unrealized)
-    (.notifyWatches watchpoint this nil))
+    (.notifyWatches watchpoint :stopped this))
 
   clojure.lang.Named
   (getNamespace [_]
@@ -85,7 +90,8 @@
 
 (defmethod print-method State [state ^java.io.Writer writer]
   (.write writer (str state)))
-(defmethod simple-dispatch State [state]
+
+(defmethod pprint/simple-dispatch State [state]
   (.write *out* (str state)))
 
 (defn- qualified-exprs [qualifiers exprs]
@@ -179,10 +185,11 @@
 
 (defonce ^:private closeables (java.util.LinkedHashSet.))
 
-(defn- default-watch [_ _ old new]
-  (if new
-    (.add closeables new)
-    (.remove closeables old)))
+(defn- default-watch [_ _ change state]
+  (case change
+    :started (.add closeables state)
+    :stopped (.remove closeables state)
+    nil))
 
 (add-watch watchpoint ::default default-watch)
 

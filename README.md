@@ -215,7 +215,7 @@ Those two functions are actually implemented using the library's extension point
 
 The library has a public `watchpoint` var.
 You can watch this var by using Clojure's `add-watch`.
-The registered watch functions receive started (realized) State objects as "new" and stopped (closed) State object as "old".
+The registered watch functions receive `:starting`, `:started`, `:stopping` or `:stopped` and the State object.
 
 You can do all kinds of things with this watchpoint, such as logging or keeping track of states yourself.
 So if you want to have more sophisticated stop logic with separate buckets/systems of states using their metadata for example?
@@ -225,7 +225,7 @@ _That's it for simple lifecycle management around the stateful parts of your app
 
 ## License
 
-Copyright © 2020-2023 Functional Bytes
+Copyright © 2020-2024 Functional Bytes
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
