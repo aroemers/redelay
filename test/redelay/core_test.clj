@@ -1,5 +1,5 @@
 (ns redelay.core-test
-  (:require [redelay.core :refer [state status stop state? defstate state* close!]]
+  (:require [redelay.core :refer [state status stop state? defstate state* close! watchpoint]]
             [clojure.test :as test :refer [deftest is]]))
 
 (defn ensure-stop [f]
@@ -74,3 +74,24 @@
     (is (thrown? Exception (stop)))
     (close! buggy-stop)
     (is (= () (stop)))))
+
+(deftest watchpoint-test
+  (let [two           (state 2)
+        forty-two     (state (+ 40 @two))
+        notifications (atom [])]
+    (add-watch watchpoint ::test #(swap! notifications conj %&))
+    (try
+      (is (= 42 @forty-two))
+      (stop)
+      (is (= [[::test watchpoint :starting forty-two]
+              [::test watchpoint :starting two]
+              [::test watchpoint :started two]
+              [::test watchpoint :started forty-two]
+              ;; stopping
+              [::test watchpoint :stopping forty-two]
+              [::test watchpoint :stopped forty-two]
+              [::test watchpoint :stopping two]
+              [::test watchpoint :stopped two]]
+             @notifications))
+      (finally
+        (remove-watch watchpoint ::test)))))
