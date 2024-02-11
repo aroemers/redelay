@@ -217,6 +217,12 @@ The library has a public `watchpoint` var.
 You can watch this var by using Clojure's `add-watch`.
 The registered watch functions receive `:starting`, `:started`, `:stopping` or `:stopped` and the State object.
 
+Try the following example:
+
+```clj
+(add-watch redelay.core/watchpoint :my-logger prn)
+```
+
 You can do all kinds of things with this watchpoint, such as logging or keeping track of states yourself.
 So if you want to have more sophisticated stop logic with separate buckets/systems of states using their metadata for example?
 Go for it, be creative and use the library's building blocks to fit your perfect workflow!
