@@ -11,6 +11,9 @@
 
 (test/use-fixtures :each ensure-stop)
 
+(defn submap? [a b]
+  (= a (select-keys b (keys a))))
+
 (deftest simple-test
   (let [foo     (state 1)
         bar     (state :start (inc @foo) :name bar)
@@ -45,8 +48,7 @@
     (is (= "bar" (name bar)))
     (is (= "baz" (name baz)))
 
-    (is (= {:private true, :dynamic true, :defstate true}
-           (select-keys (meta #'baz) [:private :dynamic :defstate])))
+    (is (submap? {:private  true, :dynamic  true, :defstate true} (meta #'baz)))
     (is (= {:dev true} (meta baz)))
     (is (= {:dev false} (alter-meta! baz update :dev not)))
     (is (= {:answer 42} (reset-meta! baz {:answer 42})))))
