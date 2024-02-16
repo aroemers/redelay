@@ -19,7 +19,7 @@
         bar     (state :start (inc @foo) :name bar)
         stopped (promise)]
 
-    (defstate ^:private baz
+    (defstate ^:private baz "docstring" {:extra "attr"}
       :start (dec @bar) (inc @bar)
       :stop  (deliver stopped this)
       :meta  {:dev true})
@@ -48,7 +48,12 @@
     (is (= "bar" (name bar)))
     (is (= "baz" (name baz)))
 
-    (is (submap? {:private  true, :dynamic  true, :defstate true} (meta #'baz)))
+    (is (submap? {:private  true
+                  :dynamic  true
+                  :defstate true
+                  :doc      "docstring"
+                  :extra    "attr"}
+                 (meta #'baz)))
     (is (= {:dev true} (meta baz)))
     (is (= {:dev false} (alter-meta! baz update :dev not)))
     (is (= {:answer 42} (reset-meta! baz {:answer 42})))))
@@ -97,3 +102,46 @@
              @notifications))
       (finally
         (remove-watch watchpoint ::test)))))
+
+(deftest defstate-doc-attr-test
+  (defstate state-0)
+  (defstate state-1 "val")
+  (defstate state-2 "doc" "val")
+  (defstate state-3 12345 "val")
+  (defstate state-4 {:my :val})
+  (defstate state-5 {:attr true} {:my :val})
+  (defstate state-6 "doc" {:my :val})
+  (defstate state-7 "doc" {:attr true} {:my :val})
+  (defstate state-8 "val" :stop)
+  (defstate state-9 "doc" {:attr true} :start "val")
+
+  (is (= nil @state-0))
+
+  (is (= "val" @state-1))
+  (is (= nil (-> state-1 var meta :doc)))
+
+  (is (= "val" @state-2))
+  (is (= "doc" (-> state-2 var meta :doc)))
+
+  (is (= "val" @state-3))
+  (is (= nil (-> state-3 var meta :doc)))
+
+  (is (= {:my :val} @state-4))
+  (is (= nil (-> state-4 var meta :attr)))
+
+  (is (= {:my :val} @state-5))
+  (is (= true (-> state-5 var meta :attr)))
+
+  (is (= {:my :val} @state-6))
+  (is (= "doc" (-> state-6 var meta :doc)))
+
+  (is (= {:my :val} @state-7))
+  (is (= "doc" (-> state-7 var meta :doc)))
+  (is (= true (-> state-7 var meta :attr)))
+
+  (is (= "val" @state-8))
+  (is (= nil (-> state-8 var meta :doc)))
+
+  (is (= "val" @state-9))
+  (is (= "doc" (-> state-9 var meta :doc)))
+  (is (= true (-> state-9 var meta :attr))))

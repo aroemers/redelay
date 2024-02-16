@@ -12,9 +12,12 @@
 - The string representation of an unrealized State object now says `:unrealized` instead of `:not-delivered`.
 - The string representation of a realized State object now adheres to a `*print-length*` of 10.
 - ❗️BREAKING: The low-level `state*` function now takes a `:name` key, instead of `:ns-str` and `:name-str`. The new entry must be a symbol and is still optional.
-- ❗️BREAKING: The `defstate` macro no longer supports a docstring or attribute map. It conflicted with start values which were strings or maps. Metadata on the name symbol is still supported. So instead of `(defstate foo "docstring" ...)` you should now write `(defstate ^{:doc "docstring"} foo ...)`.
 - ❗️BREAKING: The State object now implements `IReference` instead of `IObj`. This means that `with-meta` support has been replaced with `alter-meta!` and `reset-meta!`. This way updating meta data does not result in a new State object anymore.
 - ❗️BREAKING: The notifications to the `watchpoint` now receive one of `:starting`, `:started`, `:stopping` or `:stopped` as the third argument, and the State object as the fourth argument.
+
+### Fixed
+
+- The `defstate` macro could sometimes mistake a string or map value for a docstring or attribute map. For example, this would fail `(defstate foo "bar" :stop (println this))`. This is now fixed.
 
 ## 1.1.0
 

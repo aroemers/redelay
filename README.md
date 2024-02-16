@@ -143,16 +143,17 @@ Trying to redefine a `defstate` which is active (i.e. realized) is skipped and y
 
 #### Some other details
 
-The `defstate` macro supports metadata on the name symbol.
+The `defstate` macro supports an optional docstring and attributes map.
+It also supports metadata on the name symbol.
 Note that this metadata is set on the var.
 If you want **metadata** on the State object, you can use `:meta` expression inside `state`, or use Clojure's `alter-meta!` or `reset-meta!` on it.
 So a full `defstate` could look like this:
 
 ```clj
-(defstate ^:private my-state
+(defstate ^:private my-state "my docs" {:extra "attr"}
   :start (start-it ...)
   :stop  (stop-it this)
-  :meta  {:my-meta-score 42})
+  :meta  {:meta-score 42})
 ```
 
 Next to metadata support, Clojure's `namespace` and `name` functions also work on states.

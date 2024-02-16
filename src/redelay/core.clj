@@ -106,6 +106,18 @@
           (recur qualifiers (rest exprs) qualifier (update qualified qualifier (fnil conj []) expr))))
       qualified)))
 
+(defn- defstate-attrs [exprs]
+  (let [{[arg1 arg2 arg3] nil start :start}
+        (qualified-exprs [:start :stop :meta] exprs)]
+    (cond (and (string? arg1) (map? arg2) (or start arg3))
+          , [(assoc arg2 :doc arg1) (drop 2 exprs)]
+          (and (string? arg1) (or start arg2))
+          , [{:doc arg1} (rest exprs)]
+          (and (map? arg1) (or start arg2))
+          , [arg1 (rest exprs)]
+          :otherwise
+          , [nil exprs])))
+
 (declare state?)
 
 (defn- skip-defstate? [ns name]
@@ -169,8 +181,9 @@
   (if (skip-defstate? *ns* name)
     (binding [*out* *err*]
       (println "WARNING: skipping redefinition of active defstate" name))
-    (let [default-meta   {:dynamic true, :defstate true}
-          name-with-meta (with-meta name (merge default-meta (meta name)))
+    (let [[attrs exprs]  (defstate-attrs exprs)
+          default-meta   {:dynamic true, :defstate true}
+          name-with-meta (with-meta name (merge default-meta attrs (meta name)))
           qualified-name (symbol (str *ns*) (str name))]
       `(def ~name-with-meta
          (state ~@exprs :name ~qualified-name)))))
