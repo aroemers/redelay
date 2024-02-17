@@ -150,10 +150,12 @@ If you want **metadata** on the State object, you can use `:meta` expression ins
 So a full `defstate` could look like this:
 
 ```clj
-(defstate ^:private my-state "my docs" {:extra "attr"}
-  :start (start-it ...)
+(defstate ^:private my-state
+  "My docstring here."
+  {:extra "attributes"}
+  :start (start-it)
   :stop  (stop-it this)
-  :meta  {:meta-score 42})
+  :meta  {:score 42})
 ```
 
 Next to metadata support, Clojure's `namespace` and `name` functions also work on states.
