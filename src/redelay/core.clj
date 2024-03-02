@@ -54,9 +54,9 @@
 
   clojure.lang.IPersistentStack
   (peek [this]
-    (locking this
-      (when (realized? this)
-        @value)))
+    (let [v @value]
+      (when (not= v unrealized)
+        v)))
 
   StateFunctions
   (force-close [this]
