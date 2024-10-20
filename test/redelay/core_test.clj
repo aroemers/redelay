@@ -90,7 +90,9 @@
     (try
       (is (= 42 @forty-two))
       (stop)
-      (is (= [[::test watchpoint :starting forty-two]
+      (is (= [[::test watchpoint :referring forty-two]
+              [::test watchpoint :starting forty-two]
+              [::test watchpoint :referring two]
               [::test watchpoint :starting two]
               [::test watchpoint :started two]
               [::test watchpoint :started forty-two]

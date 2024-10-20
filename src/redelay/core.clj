@@ -6,11 +6,10 @@
 
 ;;; Watchpoint.
 
-(defonce ^{:doc "Add watches to this var to be notified of state changes, using
-  `add-watch`. The third argument to the watch fn will be one of
-  `:starting`, `:started`, `:stopping` or `:stopped`. The fourth
-   argument is the State object."}
-  watchpoint
+(defonce ^{:doc "Add watches to this var to be notified of state
+  changes, using `add-watch`. The third argument to the watch fn will
+  be one of `:referring`, `:starting`, `:started`, `:stopping` or
+  `:stopped`. The fourth argument is the State object."}  watchpoint
   (var watchpoint))
 
 
@@ -24,6 +23,7 @@
 (deftype State [name start-fn stop-fn value meta]
   clojure.lang.IDeref
   (deref [this]
+    (.notifyWatches watchpoint :referring this)
     (when-not (realized? this)
       (locking this
         (when-not (realized? this)
@@ -33,6 +33,7 @@
               (reset! value result)
               (.notifyWatches watchpoint :started this))
             (catch Exception e
+              (.notifyWatches watchpoint :aborted this)
               (throw (ex-info "Exception thrown when starting state" {:state this} e)))))))
     @value)
 

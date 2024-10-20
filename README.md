@@ -218,7 +218,7 @@ Those two functions are actually implemented using the library's extension point
 
 The library has a public `watchpoint` var.
 You can watch this var by using Clojure's `add-watch`.
-The registered watch functions receive `:starting`, `:started`, `:stopping` or `:stopped` and the State object.
+The registered watch functions receive `:referred`, `:starting`, `:started`, `:stopping` or `:stopped` and the State object.
 
 Try the following example:
 

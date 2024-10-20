@@ -1,5 +1,12 @@
 # Change Log
 
+## Unreleased
+
+### Added
+
+- The `watchpoint` now receives notifications when a state is referenced (i.e. `deref` or `force`) as well, with the third argument set to `:referred`.
+- A small `up-to` extension has been added, allowing one to stop a state and its dependencies, in reverse order.
+
 ## 2.0.0
 
 ### Added
