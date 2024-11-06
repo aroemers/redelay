@@ -16,7 +16,7 @@
 
 (deftest simple-test
   (let [foo     (state 1)
-        bar     (state :start (inc @foo) :name bar)
+        bar     (state :start (inc @foo) :name bar :stop this)
         stopped (promise)]
 
     (defstate ^:private baz "docstring" {:extra "attr"}
