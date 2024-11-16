@@ -1,5 +1,5 @@
 {:hooks
- {:macroexpand {redelay.core/state core/state}}
+ {:macroexpand {redelay.core/state redelay.core/state}}
 
  :config-in-call
  {redelay.core/state
