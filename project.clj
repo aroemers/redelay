@@ -1,4 +1,4 @@
-(defproject functionalbytes/redelay "2.0.0"
+(defproject functionalbytes/redelay "2.0.1"
   :description "Clojure library for first class lifecycle-managed state."
   :url "https://github.com/aroemers/redelay"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"

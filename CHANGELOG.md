@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.0.1
+
+### Added
+
+- Proper clj-kondo support
+
 ## 2.0.0
 
 ### Added
