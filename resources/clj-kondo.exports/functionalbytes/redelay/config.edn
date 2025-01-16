@@ -1,0 +1,11 @@
+{:hooks
+ {:macroexpand {redelay.core/state redelay.core/state}}
+
+ :config-in-call
+ {redelay.core/state
+  {:linters {:unresolved-symbol {:exclude-patterns ["^this"]}}}
+  redelay.core/defstate
+  {:linters {:unresolved-symbol {:exclude-patterns ["^this"]}}}}
+
+ :lint-as
+ {redelay.core/defstate clojure.core/def}}

@@ -53,7 +53,7 @@
             (throw (ex-info "Exception thrown when closing state" {:state this} e)))))))
 
   clojure.lang.IPersistentStack
-  (peek [this]
+  (peek [_]
     (let [v @value]
       (when (not= v unrealized)
         v)))
@@ -115,7 +115,7 @@
           , [{:doc arg1} (rest exprs)]
           (and (map? arg1) (or start arg2))
           , [arg1 (rest exprs)]
-          :otherwise
+          :else
           , [nil exprs])))
 
 (declare state?)
